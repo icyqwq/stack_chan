@@ -1,0 +1,15 @@
+dependencies:
+  chmorgan/esp-libhelix-mp3:
+    component_hash: cbb76089dc2c5749f7b470e2e70aedc44c9da519e04eb9a67d4c7ec275229e53
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.0.3
+  idf:
+    component_hash: null
+    source:
+      type: idf
+    version: 4.4.5
+manifest_hash: bdc084be07a92289c325c7fb7d24f4524d962c3be9b5e5dd404d84095ee2b5d2
+target: esp32s3
+version: 1.0.0
