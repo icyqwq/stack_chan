@@ -106,25 +106,15 @@ public:
     {
         _aqi_level = 0;
         _lang_code = LANGUAGE_ENGLISH;
-        _language = k_languages[_lang_code];
     }
 
     ~OpenWeatherAPI() {}
-
-    void setLanguage(int lang) override
-    {
-        if (lang >= NUM_LANGUAGES) {
-            lang = LANGUAGE_ENGLISH;
-        }
-        _lang_code = lang;
-        _language = k_languages[lang];
-    }
 
     void updateURL() override
     {
         //https://api.openweathermap.org/data/3.0/onecall?lat=0.1276&lon=51.5072&appid=097a18e6638a79a1f036b135d4b4a4b4&units=metric&lang=zh_cn
         char buf[256];
-        sprintf(buf, "%s?lat=%s&lon=%s&appid=%s&units=metric&lang=%s", API_URL, _latitude.c_str(), _longitude.c_str(), _token.c_str(), _language.c_str());
+        sprintf(buf, "%s?lat=%s&lon=%s&appid=%s&units=metric&lang=%s", API_URL, _latitude.c_str(), _longitude.c_str(), _token.c_str(), k_languages[_lang_code]);
         _url = buf;
         sprintf(buf, "%s?lat=%s&lon=%s&appid=%s&units=metric", AQI_API_URL, _latitude.c_str(), _longitude.c_str(), _token.c_str());
         _aqi_url = buf;
@@ -155,9 +145,9 @@ public:
         if (requestOneCall() != ESP_OK) {
             return ESP_FAIL;
         }
-        if (requestAQI() != ESP_OK) {
-            return ESP_FAIL;
-        }
+        // if (requestAQI() != ESP_OK) {
+        //     return ESP_FAIL;
+        // }
         return ESP_OK;
     }
 
@@ -296,7 +286,7 @@ public:
         auto funcPrintString = [](const String& elem) { printf("%s", elem.c_str()); };
         auto funcPrintFloat = [](const float& elem) { printf("%f", elem); };
         auto funcPrintSkycon = [](const skycon_code_t& elem) { printf("%d", elem); };
-        auto funcPrintTimeT = [](const time_t& elem) { printf("%d", elem); };
+        auto funcPrintTimeT = [](const time_t& elem) { printf("%lu", elem); };
 
         printf("Server Time: %llu\n", getServerTime());
         printf("Keypoint: %s\n", getKeypoint().c_str());
@@ -353,7 +343,7 @@ public:
         return _map_find(realtime["weather"][0]["id"].as<int>(), this->_skycon_map);
     }
 
-    String getRealtimeSkyconDescription() override
+    String getRealtimeSkyconDescription(language_code_t lang = LANGUAGE_DEFAULT) override
     {
         return realtime["weather"][0]["description"];
     }

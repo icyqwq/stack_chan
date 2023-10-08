@@ -26,11 +26,12 @@ protected:
     int32_t _play_idx;
     uint8_t *_p_next_frame;
     uint32_t _size;
-    int _w, _h;
+    int _x, _y, _w, _h;
+    bool _is_fullscreen;
 
 public:
-    AnimeSeq(uint8_t *buffer, int w, int h, int32_t loops, int32_t id, std::string info = "AnimeSeq");
-    AnimeSeq(const char* file_name, int w, int h, int32_t loops, int32_t id, std::string info = "AnimeSeq"); // load from ezfiles
+    AnimeSeq(uint8_t *buffer, int x, int y, int w, int h, int32_t loops, int32_t id, std::string info = "AnimeSeq");
+    AnimeSeq(const char* file_name, int x, int y, int w, int h, int32_t loops, int32_t id, std::string info = "AnimeSeq"); // load from ezfiles
     ~AnimeSeq();
     virtual void update(uint64_t frame_counter, LGFX_Sprite &sprite);
     virtual void reset();
@@ -39,10 +40,29 @@ public:
 protected:
     uint8_t getNextFrame();
     void init(uint8_t *buffer, int w, int h, int32_t loops, int32_t id, std::string info);
+
+    void draw(LGFX_Sprite &sprite)
+    {
+        if (_is_fullscreen) {
+            fpng_decode_memory(_p_next_frame, _size, (uint8_t*)sprite.getBuffer(), _w, _h);
+            convert_rgb888_to_rgb565((uint8_t*)sprite.getBuffer(), _w*_h*3, true);
+        }
+        else {
+            fpng_decode_memory(_p_next_frame, _size, _w, _h);
+            convert_rgb888_to_rgb565(fpng_get_buffer(), _w * _h * 3, false);
+            sprite.setSwapBytes(true);
+            sprite.pushImage(_x, _y, _w, _h, (uint16_t*)fpng_get_buffer());
+        }
+    }
 };
 
 inline void AnimeSeq::init(uint8_t *buffer, int w, int h, int32_t loops, int32_t id, std::string info)
 {
+    if (w == 320 && h == 240) {
+        _is_fullscreen = true;
+    } else {
+        _is_fullscreen = false;
+    }
     ESP_LOGI(TAG, "Init %s", info.c_str());
     _w = w;
     _h = h;
@@ -147,8 +167,10 @@ inline void AnimeSeq::init(uint8_t *buffer, int w, int h, int32_t loops, int32_t
     }
 }
 
-inline AnimeSeq::AnimeSeq(const char* file_name, int w, int h, int32_t loops, int32_t id, std::string info): AnimeBase(id, loops)
+inline AnimeSeq::AnimeSeq(const char* file_name, int x, int y, int w, int h, int32_t loops, int32_t id, std::string info): AnimeBase(id, loops)
 {
+    _x = x;
+    _y = y;
     const uint8_t* data_ptr = NULL;
     uint32_t data_length = 0;
     qmsd_ezfiles_get(file_name, &data_ptr, &data_length);
@@ -159,8 +181,10 @@ inline AnimeSeq::AnimeSeq(const char* file_name, int w, int h, int32_t loops, in
     }
 }
 
-inline AnimeSeq::AnimeSeq(uint8_t *buffer, int w, int h, int32_t loops, int32_t id, std::string info): AnimeBase(id, loops)
+inline AnimeSeq::AnimeSeq(uint8_t *buffer, int x, int y, int w, int h, int32_t loops, int32_t id, std::string info): AnimeBase(id, loops)
 {
+    _x = x;
+    _y = y;
     init(buffer, w, h, loops, id, info);
 }
 
@@ -187,8 +211,7 @@ inline void AnimeSeq::update(uint64_t frame_counter, LGFX_Sprite &sprite)
         }
         else if (_mode == ANIME_MODE_PNG)
         {
-            fpng_decode_memory(_p_next_frame, _size, (uint8_t*)sprite.getBuffer(), _w, _h);
-            convert_rgb888_to_rgb565((uint8_t*)sprite.getBuffer(), _w*_h*3, true);
+            draw(sprite);
         }
         else
         {
@@ -217,8 +240,7 @@ inline void AnimeSeq::update(uint64_t frame_counter, LGFX_Sprite &sprite)
     }
     else if (_mode == ANIME_MODE_PNG)
     {
-        fpng_decode_memory(_p_next_frame, _size, (uint8_t*)sprite.getBuffer(), _w, _h);
-        convert_rgb888_to_rgb565((uint8_t*)sprite.getBuffer(), _w*_h*3, true);
+        draw(sprite);
     }
     else
     {
@@ -232,6 +254,7 @@ inline void AnimeSeq::reset()
     _play_idx = 0;
     _p_next_frame = nullptr;
     _size = 0;
+    _next_update_frame = 0;
     ESP_LOGI(TAG, "Anime seq [%s] reset", this->info.c_str());
 }
 

@@ -1,6 +1,6 @@
 #include "app_common.h"
 #include <SD.h>
-
+#include "rgb565_to_gray_lut.h"
 #include <map>
 
 bool compareUsage(TaskStatus_t *a, TaskStatus_t *b)
@@ -140,6 +140,12 @@ void startSystemStatsTask()
     xTaskCreatePinnedToCore(&System_StatsTask, "System_StatsTask", 4 * 1024, NULL, 15, NULL, 1);
 }
 
+void convertToXY(int x0, int y0, float r, float degree, int* x1, int* y1) {
+    float radian = degree * (PI / 180.0); // 将度数转换为弧度
+    *x1 = x0 + r * cos(radian);
+    *y1 = y0 + r * sin(radian);
+}
+
 float ease_out_cubic(float x) {
     return 1 - pow(1 - x, 3);
 }
@@ -247,4 +253,98 @@ void listFiles(const char * dirName)
     entry.close();
     entry = dir.openNextFile();
   }
+}
+
+inline uint32_t _calc2x2Block(uint16_t* image, uint32_t width, uint32_t height, uint32_t row, uint32_t column)
+{
+    uint32_t base0 = row * width + column;
+    uint32_t base1 = base0 + width;
+    return (
+        rgb565_to_gray_lut[image[base0]] + 
+        rgb565_to_gray_lut[image[base1]] + 
+        rgb565_to_gray_lut[image[base0 + 1]] + 
+        rgb565_to_gray_lut[image[base1 + 1]]) >> 2;
+}
+
+inline void _applyDitheredVal(uint16_t grayscale, uint8_t *line0, uint8_t *line1)
+{
+    *line0 <<= 2;
+    *line1 <<= 2;
+    if (grayscale < 51) {
+        *line0 |= 0b11;
+        *line1 |= 0b11;
+    }
+    else if (grayscale < 102) {
+        *line0 |= 0b10;
+        *line1 |= 0b11;
+    }
+    else if (grayscale < 153) {
+        *line0 |= 0b10;
+        *line1 |= 0b01;
+    }
+    else if (grayscale < 204) {
+        *line0 |= 0b10;
+        *line1 |= 0b00;
+    }
+    else {
+        *line0 |= 0b00;
+        *line1 |= 0b00;
+    }
+}
+
+void histogramEqualization(const uint8_t* input, uint8_t* output, int width, int height) {
+    #define LEVELS 256
+    int hist[LEVELS] = {0};
+    float prob[LEVELS] = {0.0};
+    float cdf[LEVELS] = {0.0};
+
+    // 计算直方图
+    for (int i = 0; i < width * height; i++) {
+        hist[input[i]]++;
+    }
+
+    // 计算概率
+    for (int i = 0; i < LEVELS; i++) {
+        prob[i] = (float)hist[i] / (width * height);
+    }
+
+    // 计算累积分布函数 (CDF)
+    cdf[0] = prob[0];
+    for (int i = 1; i < LEVELS; i++) {
+        cdf[i] = cdf[i - 1] + prob[i];
+    }
+
+    // 重新映射像素值
+    for (int i = 0; i < width * height; i++) {
+        output[i] = (uint8_t)(cdf[input[i]] * 255.0);
+    }
+}
+
+
+void ditherImg(uint16_t* image, uint8_t* dst, uint32_t width, uint32_t height) 
+{
+    uint32_t dst_width = width >> 3;
+    uint32_t gray_average = 0;
+    
+    for (uint32_t row = 0; row < height; row += 2) {
+        uint32_t base = row * dst_width;
+        for (uint32_t column = 0; column < width; column += 8) {
+            uint8_t line0 = 0, line1 = 0;
+            uint16_t g0 = _calc2x2Block(image, width, height, row, column + 0);
+            uint16_t g1 = _calc2x2Block(image, width, height, row, column + 2);
+            uint16_t g2 = _calc2x2Block(image, width, height, row, column + 4);
+            uint16_t g3 = _calc2x2Block(image, width, height, row, column + 6);
+
+            _applyDitheredVal(g0, &line0, &line1);
+            _applyDitheredVal(g1, &line0, &line1);
+            _applyDitheredVal(g2, &line0, &line1);
+            _applyDitheredVal(g3, &line0, &line1);
+
+            uint32_t idx_0 = base + (column >> 3);
+            uint32_t idx_1 = base + (column >> 3) + dst_width;
+
+            dst[idx_0] = line0;
+            dst[idx_1] = line1;
+        }
+    }
 }

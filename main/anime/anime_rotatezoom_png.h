@@ -80,8 +80,8 @@ public:
                 ease_value = _ease_cb(_t);
             }
 
-            _cur_x = _x + ease_value * _dx;
-            _cur_y = _y + ease_value * _dy;
+            _cur_x = AnimeMoveableObj::_x + ease_value * _dx;
+            _cur_y = AnimeMoveableObj::_y + ease_value * _dy;
             _cur_scale_x = _start_scale_x + ease_value * _d_scale_x;
             _cur_scale_y = _start_scale_y + ease_value * _d_scale_y;
             _cur_angle = _start_angle + ease_value * _d_angle;

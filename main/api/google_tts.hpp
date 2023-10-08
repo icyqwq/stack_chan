@@ -54,7 +54,7 @@ public:
 		_speaker_callback = callback;
 	}
 
-	esp_err_t request(String text, String lang, String model, String gender = "FEMALE")
+	esp_err_t request(String text, String lang, String model, float speed = 1.25, String gender = "FEMALE")
 	{
 		if (WiFi.status() != WL_CONNECTED) {
 			ESP_LOGE(TAG, "Please connect to Wi-Fi.");
@@ -73,7 +73,7 @@ public:
 		(*_req_json_doc)["voice"]["ssmlGender"] = gender;
 		(*_req_json_doc)["audioConfig"]["audioEncoding"] = "LINEAR16";
 		(*_req_json_doc)["audioConfig"]["sampleRateHertz"] = 16000;
-		(*_req_json_doc)["audioConfig"]["speakingRate"] = 1.25;
+		(*_req_json_doc)["audioConfig"]["speakingRate"] = speed;
 		(*_req_json_doc)["audioConfig"]["pitch"] = 0;
 		String requestBody;
         serializeJson(*_req_json_doc, requestBody);

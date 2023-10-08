@@ -128,24 +128,14 @@ public:
     CaiyunAPI()
     {
         _lang_code = LANGUAGE_ENGLISH;
-        _language = k_languages[_lang_code];
     }
 
     ~CaiyunAPI() {}
 
-    void setLanguage(int lang) override
-    {
-        if (lang >= NUM_LANGUAGES) {
-            lang = LANGUAGE_ENGLISH;
-        }
-        _lang_code = lang;
-        _language = k_languages[lang];
-    }
-
     void updateURL() override
     {
         char buf[256];
-        sprintf(buf, "%s/%s/%s,%s/weather?alert=true&dailysteps=2&hourlysteps=28&lang=%s&unit=metric:v2", API_URL, _token.c_str(), _longitude.c_str(), _latitude.c_str(), _language.c_str());
+        sprintf(buf, "%s/%s/%s,%s/weather?alert=true&dailysteps=2&hourlysteps=1&lang=%s&unit=metric:v2", API_URL, _token.c_str(), _longitude.c_str(), _latitude.c_str(),  k_languages[_lang_code]);
         _url = buf;
         ESP_LOGI(TAG, "API URL: %s", buf);
     }
@@ -238,7 +228,7 @@ public:
         auto funcPrintString = [](const String& elem) { printf("%s", elem.c_str()); };
         auto funcPrintFloat = [](const float& elem) { printf("%f", elem); };
         auto funcPrintSkycon = [](const skycon_code_t& elem) { printf("%d", elem); };
-        auto funcPrintTimeT = [](const time_t& elem) { printf("%d", elem); };
+        auto funcPrintTimeT = [](const time_t& elem) { printf("%lu", elem); };
 
         printf("Server Time: %llu\n", getServerTime());
         printf("Keypoint: %s\n", getKeypoint().c_str());
@@ -299,10 +289,14 @@ public:
         return _map_find(realtime["skycon"].as<String>().c_str(), _skycon_map);
     }
 
-    String getRealtimeSkyconDescription() override
+    String getRealtimeSkyconDescription(language_code_t lang = LANGUAGE_DEFAULT) override
     {
+        int code = _lang_code;
+        if (lang != LANGUAGE_DEFAULT) {
+            code = lang;
+        }
         const char *const * skycon_desc_table;
-        switch (_lang_code)
+        switch (code)
         {
         case LANGUAGE_CHINESE_SIMPLIFIED:
         case LANGUAGE_CHINESE_TRADITIONAL: skycon_desc_table = k_skycon_desc_cn; break; 
@@ -377,12 +371,12 @@ public:
 
     float getTodayTemperatureMax() override
     {
-        return daily["temperature"]["max"];
+        return daily["temperature"][0]["max"];
     }
 
     float getTodayTemperatureMin() override
     {
-        return daily["temperature"]["min"];
+        return daily["temperature"][0]["min"];
     }
 
     std::vector<time_t> getSunTime()

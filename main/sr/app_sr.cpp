@@ -126,6 +126,9 @@ static void audio_feed_task(void *arg) {
 
         float rms = calculate_rms(audio_buffer, audio_chunksize * I2S_CHANNEL_NUM, I2S_CHANNEL_NUM);
         app_led_task_feed(rms);
+        if (rms > 200000) {
+            action_send_cmd(ACTION_DIZZY);
+        }
 
         threshold_rms = update_ema_rms(threshold_rms, rms, 0.01);
                 
@@ -232,8 +235,8 @@ esp_err_t app_sr_start(bool record_en) {
     ESP_GOTO_ON_FALSE(pdPASS == ret_val, ESP_FAIL, err, TAG,
                       "Failed create audio detect task");
 
-    g_sr_data->handle_task_stack  = (uint8_t*)heap_caps_malloc(1024 * 32, MALLOC_CAP_SPIRAM);
-    g_sr_data->handle_task = xTaskCreateStatic(sr_handler_task, "SR Handler", 1024 * 32, NULL, 14,  g_sr_data->handle_task_stack, &g_sr_data->handle_task_tcb);
+    g_sr_data->handle_task_stack  = (uint8_t*)heap_caps_malloc(1024 * 64, MALLOC_CAP_SPIRAM);
+    g_sr_data->handle_task = xTaskCreateStatic(sr_handler_task, "SR Handler", 1024 * 64, NULL, 14,  g_sr_data->handle_task_stack, &g_sr_data->handle_task_tcb);
 
     // ret_val = xTaskCreatePinnedToCore(&sr_handler_task, "SR Handler Task",
     //                                   32 * 1024, NULL, 15,

@@ -5,7 +5,7 @@
 
 #define TAG "Motion"
 static QueueHandle_t queue_motion_cmd = NULL;
-static bool nod_running = false;
+static bool action_running = false;
 
 void motion_nod(int times)
 {
@@ -19,9 +19,25 @@ void motion_nod(int times)
 	servo_2.setPosition(last_pos);
 }
 
+void motion_dizzy(int times)
+{
+	servo_2.backToDefault();
+	servo_1.backToDefault();
+
+	int servo1_default = servo_1.getDefaultPosition();
+	for (int i = 0; i < times; i++) {
+		servo_1.setPosition(random(servo1_default - 200, servo1_default + 200));
+		servo_2.setPosition(random(servo_2.getMin(), servo_2.getMax()));
+		vTaskDelay(100);
+	}
+
+	servo_2.backToDefault();
+	servo_1.backToDefault();
+}
+
 void motion_task(void *args)
 {
-	motion_cmd_t motion;
+	app_common_cmd_t motion;
 	uint32_t next_wait_time = portMAX_DELAY;
 	bool need_back = false;
 	bool is_motion_exec = false;
@@ -51,9 +67,9 @@ void motion_task(void *args)
 		{
 		case MOTION_CMD_NOD:
 		{
-			nod_running = true;
+			action_running = true;
 			motion_nod(motion.data);
-			nod_running = false;
+			action_running = false;
 			break;	
 		}
 		case MOTION_CMD_TURN_RIGHT:
@@ -93,6 +109,14 @@ void motion_task(void *args)
 			is_motion_exec = false;
 			break;
 		}
+
+		case MOTION_CMD_DIZZY:
+		{
+			action_running = true;
+			motion_dizzy(motion.data);
+			action_running = false;
+			break;
+		}
 		
 		default:
 			break;
@@ -103,21 +127,21 @@ void motion_task(void *args)
 
 void motion_init()
 {
-	queue_motion_cmd = xQueueCreate(8, sizeof(motion_cmd_t));
+	queue_motion_cmd = xQueueCreate(8, sizeof(app_common_cmd_t));
 	xTaskCreatePinnedToCore(&motion_task, "Motion", 8 * 1024, NULL, 15, NULL, 1);
 
 }
 
 esp_err_t motion_send_cmd(uint8_t cmd, int data)
 {
-	if (nod_running) {
+	if (action_running) {
 		return ESP_FAIL;
 	}
 	if (!queue_motion_cmd) {
 		return ESP_FAIL;
 	}
 
-	motion_cmd_t motion;
+	app_common_cmd_t motion;
 	motion.cmd = cmd;
 	motion.data = data;
 	if (xQueueSend(queue_motion_cmd, &motion, 0) != pdTRUE) {
@@ -128,14 +152,14 @@ esp_err_t motion_send_cmd(uint8_t cmd, int data)
 
 esp_err_t motion_send_cmd(uint8_t cmd)
 {
-	if (nod_running) {
+	if (action_running) {
 		return ESP_FAIL;
 	}
 	if (!queue_motion_cmd) {
 		return ESP_FAIL;
 	}
 
-	motion_cmd_t motion;
+	app_common_cmd_t motion;
 	motion.cmd = cmd;
 	if (xQueueSend(queue_motion_cmd, &motion, 0) != pdTRUE) {
 		return ESP_FAIL;
@@ -143,9 +167,9 @@ esp_err_t motion_send_cmd(uint8_t cmd)
 	return ESP_OK;
 }
 
-esp_err_t motion_send_cmd(motion_cmd_t motion)
+esp_err_t motion_send_cmd(app_common_cmd_t motion)
 {
-	if (nod_running) {
+	if (action_running) {
 		return ESP_FAIL;
 	}
 	if (!queue_motion_cmd) {

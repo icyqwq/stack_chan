@@ -6,6 +6,10 @@
 #define BYTE_RATE           (16000 * (16 / 8))
 #define SIGN(x) (x > 0 ? 1 : -1)
 
+#ifndef PI
+  #define PI 3.14159265358979323846
+#endif
+
 
 struct __attribute__((packed)) wav_header_t
 {
@@ -54,3 +58,5 @@ void closest_point_on_circle_edge(int x, int y, int x0, int y0, int r, int *clos
 float ease_out_cubic(float x);
 float lerp(float start, float end, float t);
 void startSystemStatsTask();
+void convertToXY(int x0, int y0, float r, float degree, int* x1, int* y1);
+void ditherImg(uint16_t* image, uint8_t* dst, uint32_t width, uint32_t height);

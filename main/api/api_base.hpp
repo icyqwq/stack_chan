@@ -64,7 +64,8 @@ public:
         LANGUAGE_JAPANESE,
         LANGUAGE_CHINESE_SIMPLIFIED,
         LANGUAGE_CHINESE_TRADITIONAL,
-        NUM_LANGUAGES
+        NUM_LANGUAGES,
+        LANGUAGE_DEFAULT,
     } language_code_t;
 
 protected:
@@ -73,7 +74,6 @@ protected:
     String _token;
     String _longitude;
     String _latitude;
-    String _language;
     int _lang_code;
     String _url;
     SPIRAMJsonDocument *doc;
@@ -154,7 +154,14 @@ public:
         return _lang_code;
     }
 
-    virtual void setLanguage(int lang) = 0;
+    void setLanguage(int lang)
+    {
+        if (lang >= NUM_LANGUAGES) {
+            lang = LANGUAGE_ENGLISH;
+        }
+        _lang_code = lang;
+    }
+
     virtual void updateURL() = 0;
     virtual esp_err_t request() = 0;
 
@@ -174,7 +181,7 @@ public:
     virtual skycon_code_t getRealtimeSkycon() = 0;
 
     // Description for sky condition, like: Clouds
-    virtual String getRealtimeSkyconDescription() = 0;
+    virtual String getRealtimeSkyconDescription(language_code_t lang = LANGUAGE_DEFAULT) = 0;
 
     // m/s
     virtual float getRealtimeWindSpeed() = 0;

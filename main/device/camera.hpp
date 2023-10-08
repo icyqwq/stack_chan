@@ -3,6 +3,7 @@
 #include "esp_camera.h"
 #include <M5Unified.h>
 
+
 class camera
 {
 private:
@@ -91,5 +92,7 @@ public:
 		}
 		releaseFb();
 	}
+
+	
 };
 

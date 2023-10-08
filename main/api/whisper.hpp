@@ -77,9 +77,12 @@ public:
 			return ESP_FAIL;
 		}
 
+
 		_resp_json_doc.clear();
 
 		begin(serverName);
+
+		// printf("_client->localIP(): %s", _client->localIP().toString().c_str());
 		
 		int httpResponseCode = sendRequest("POST", audio_data, size);
 

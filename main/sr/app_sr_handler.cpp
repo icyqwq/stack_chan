@@ -21,6 +21,7 @@
 #include "app_task.h"
 #include "app_function_call.h"
 #include "app_common.h"
+#include "app_motion.h"
 #include <SD.h>
 
 #include "anime.h"
@@ -49,9 +50,9 @@ void play_wakeup_audio()
 
 void reconnect_wifi()
 {
-    WiFi.disconnect();
-    delay(100);
-    WiFi.begin("Real-Internet", "ENIAC2333");
+    // WiFi.disconnect();
+    // delay(100);
+    // WiFi.begin("Real-Internet", "ENIAC2333");
 }
 
 #define RECORD_FRAME_LEN    1024 // 100ms
@@ -64,11 +65,11 @@ static int16_t * p_audio_buf = NULL;
 extern int16_t *audio_buffer;
 extern int audio_buffer_size;
 static Whisper::language_t chat_lang = Whisper::ENGLISH;
-ChatGPT gpt("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");
+ChatGPT gpt("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");
 
 esp_err_t request_stt(String &result)
 {
-    Whisper stt("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");
+    Whisper stt("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");
 
     chat_lang = stt.getLastLanguage();
     generate_wav_header((char*)wav_file_buffer, wav_size, 16000, 1);
@@ -76,14 +77,14 @@ esp_err_t request_stt(String &result)
     if (stt.request(wav_file_buffer, wav_size) != ESP_OK) {
         wav_player.playFromSD(String("/network_error_") + k_lang_postfix[chat_lang]);
         ESP_LOGE(TAG, "STT API request failed.");
-        layer_log->setLog("STT error");
+        layer_log->setValue("STT error");
         reconnect_wifi();
         return ESP_FAIL;
     }
     MEMCHECK
     if (stt.last_result.isEmpty()) {
         ESP_LOGW(TAG, "Not talk anything");
-        layer_log->setLog("Talk nothing");
+        layer_log->setValue("Talk nothing");
         return ESP_FAIL;
     } 
 
@@ -98,7 +99,7 @@ esp_err_t request_gpt(String &request, String &result, int &func_id)
     if (gpt.request(request) != ESP_OK) {
         wav_player.playFromSD(String("/network_error_") + k_lang_postfix[chat_lang]);
         ESP_LOGE(TAG, "GPT API request failed.");
-        layer_log->setLog("GPT error");
+        layer_log->setValue("GPT error");
         reconnect_wifi();
         return ESP_FAIL;
     }
@@ -123,7 +124,7 @@ esp_err_t request_tts(String &request)
     if (tts.request(request, k_lang_name[chat_lang], k_lang_model[chat_lang]) != ESP_OK) {
         wav_player.playFromSD(String("/network_error_") + k_lang_postfix[chat_lang]);
         ESP_LOGE(TAG, "TTS API request failed.");
-        layer_log->setLog("TTS error");
+        layer_log->setValue("TTS error");
         reconnect_wifi();
         return ESP_FAIL;
     }
@@ -215,6 +216,7 @@ esp_err_t record_segment()
     if (valid_count == 0) {
         ESP_LOGW(TAG, "Not talk anything");
         app_eye_start();
+        app_led_set_mode(LED_MODE_RMS);
         return ESP_FAIL;
     }
 
@@ -245,14 +247,14 @@ esp_err_t record_segment()
     if (func_id != 0) {
         if (invoke_function(func_id, result, chat_lang) != ESP_OK) {
             ESP_LOGE(TAG, "Function execution failed.");
-            layer_log->setLog("Exec error");
+            layer_log->setValue("Exec error");
             goto failed;
         }
     }
     else {
         if (result.length() == 0) {
             ESP_LOGE(TAG, "No Response.");
-            layer_log->setLog("No response");
+            layer_log->setValue("No response");
             goto failed;
         }
         if (request_tts(result) != ESP_OK) {
@@ -265,6 +267,7 @@ esp_err_t record_segment()
     M5.Speaker.end();
     M5.Mic.begin();
     endTalk();
+    app_led_set_mode(LED_MODE_RMS);
     return ESP_OK;
     
     failed:
@@ -276,6 +279,7 @@ esp_err_t record_segment()
     M5.Speaker.end();
     M5.Mic.begin();
     endTalk();
+    app_led_set_mode(LED_MODE_RMS);
 
     return ESP_FAIL;
 }
@@ -301,6 +305,8 @@ void sr_handler_task(void *pvParam) {
 
         if (WAKENET_DETECTED == result.wakenet_mode) {
             printf("Detected\r\n");
+            motion_send_cmd(MOTION_CMD_NOD, 2);
+            app_led_set_mode(LED_MODE_ROTATE);
             record_segment();
 
             app_sr_give_mic_sem();

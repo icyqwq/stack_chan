@@ -8,7 +8,8 @@
 #include "anime_eye.h"
 #include "anime_moveable_png.h"
 #include "anime_rotatezoom_png.h"
-#include "anime_log.h"
+#include "anime_label.h"
+#include "anime_moveable_label.h"
 
 typedef enum
 {
@@ -30,16 +31,40 @@ typedef enum
     ANIME_HEART_2,
 
     ANIME_FACE_CRY,
+    ANIME_DIZZ,
 
     ANIME_FACE_KAWAI_LEFT,
     ANIME_FACE_KAWAI_RIGHT,
+
+    ANIME_WEATHER_CLEAR,
+    ANIME_WEATHER_CLEAR_NIGHT,
+    ANIME_WEATHER_CLOUDY,
+    ANIME_WEATHER_CLOUDY_NIGHT,
+    ANIME_WEATHER_HAZEL,
+    ANIME_WEATHER_HAZEM,
+    ANIME_WEATHER_HAZES,
+    ANIME_WEATHER_PARTCLOUDY,
+    ANIME_WEATHER_RAINL,
+    ANIME_WEATHER_RAINM,
+    ANIME_WEATHER_RAINS,
+    ANIME_WEATHER_RAINX,
+    ANIME_WEATHER_SNOWL,
+    ANIME_WEATHER_SNOWM,
+    ANIME_WEATHER_SNOWS,
+    ANIME_WEATHER_THUNDERSTORM,
+    ANIME_WEATHER_THUNDERSTORMRAINL,
+    ANIME_WEATHER_THUNDERSTORMRAINM,
+    ANIME_WEATHER_THUNDERSTORMRAINS,
+    ANIME_WEATHER_THUNDERSTORMRAINX,
+    ANIME_WEATHER_WIND,
+    ANIME_WEATHER_INFO,
 
     ANIME_RADIATION,
     ANIME_LOG,
     ANIME_MAX
 } anime_sel_t;
 
-extern AnimeLog *layer_log;
+extern AnimeLabel *layer_log;
 
 extern AnimePNG *layer_face_base;
 extern AnimeMouth *layer_mouth;
@@ -61,6 +86,12 @@ extern AnimeRotateZoomPNG *layer_radiation;
 
 extern AnimePNG *layer_face_kawai_left;
 extern AnimePNG *layer_face_kawai_right;
+
+extern AnimeMoveablePNG *layer_weathers[];
+extern AnimeMoveableLabel *layer_weather_info;
+
+extern AnimeSeq *layer_dizz;
+
 
 void anime_init();
 void switch_anime(anime_layer_sel_t anime);

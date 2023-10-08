@@ -63,7 +63,7 @@ public:
 	}
 
 	void resetChat()
-	{
+	{		
 		_function_call_id = 0;
 		function_call_arg = "";
 		last_result = "";
@@ -72,17 +72,21 @@ public:
 		(*_req_json_doc)["model"] = _model;
 		addChat("system", prompt);
 		
-		addFunction("1", "This function allows users to capture images of any person, place, or object instantly.");
+		addFunction("1", "Should be called when users want to capture images");
 
-		addFunction("2", "This function provides control over directional turning, allowing for angular adjustments to the left or right.");
+		addFunction("2", "Provides control over directional turning, allowing for angular adjustments to the left or right.");
 		addFuncProperties(2, "degrees", "integer", "The degrees to turn.");
 		addFuncProperties(2, "direction", "string", "The direction to turn, could be left or right.");
 		addFuncUnit(2, "string", "degree");
 
-		addFunction("3", "This function should be called when user say 114514");
+		addFunction("3", "Should be called when user want's to execute secret command");
 
-		addFunction("4", "This function is designed to adjust volume of device.");
+		addFunction("4", "Adjust volume of device.");
 		addFuncProperties(4, "vol", "integer", "Volume percentage, ranging from 0 to 100.");
+
+		addFunction("5", "Get weather conditions with your current latitude and longitude for any location. Location should be convert to longitude and latitude");
+		addFuncProperties(5, "lon", "string", "longitude in degrees");
+		addFuncProperties(5, "lat", "string", "latitude in degrees");
 	}
 
 	void addChat(String role, String content)
@@ -127,7 +131,6 @@ public:
 			return ESP_FAIL;
 		}
 
-		_req_json_doc->clear();
 		_resp_json_doc.clear();
 
 		_function_call_id = 0;

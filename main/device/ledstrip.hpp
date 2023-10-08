@@ -85,7 +85,24 @@ public:
 		{
 			ESP_ERROR_CHECK(_strip->set_pixel(_strip, i, r, g, b));
 		}
-		update();
+	}
+
+	void setColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
+	{
+		ESP_ERROR_CHECK(_strip->set_pixel(_strip, n, r, g, b));
+	}
+
+	void setHSVColor(uint16_t n, float h, float s, float v)
+	{
+		if (h < 0) {
+			h = 0;
+		}
+		if (h > 360) {
+			h = 360;
+		}
+		float r = 0, g = 0, b = 0;
+        HSVtoRGB(h, s, v, r, g, b);
+		ESP_ERROR_CHECK(_strip->set_pixel(_strip, n, r, g, b));
 	}
 
 	void HSVtoRGB(float H, float S, float V, float &R, float &G, float &B)
@@ -127,5 +144,10 @@ public:
 		R = (r + m) * 255;
 		G = (g + m) * 255;
 		B = (b + m) * 255;
+	}
+
+	uint16_t num()
+	{
+		return _num;
 	}
 };

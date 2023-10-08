@@ -4,6 +4,8 @@
 #include "anime.h"
 #include "app_motion.h"
 #include "app_task.h"
+#include "api_openweather.hpp"
+#include "api_caiyun.hpp"
 
 #define TAG "FuncCall"
 
@@ -21,7 +23,7 @@ const char * k_lang_model[3] = {
 
 static Whisper::language_t chat_lang;
 
-void startTalk()
+void startTalk(bool motion)
 {
 	layer_hand_left->endMove();
 	layer_sweat_0->endMove();
@@ -31,7 +33,9 @@ void startTalk()
 	layer_eye_left->enable();
 	layer_eye_right->enable();
 	layer_mouth->startTalk();
-	motion_send_cmd(MOTION_CMD_TALK_START);
+	if (motion) {
+		motion_send_cmd(MOTION_CMD_TALK_START);
+	}
 }
 
 void endTalk()
@@ -51,7 +55,7 @@ void sayOK()
 
 esp_err_t func_call_snapshot()
 {
-	startTalk();
+	startTalk(false);
 	wav_player.playFromSD(String("/camera-") + k_lang_postfix[chat_lang]);
 	endTalk();
 
@@ -61,7 +65,21 @@ esp_err_t func_call_snapshot()
 	}
 	cam.getFb();
 	cam.releaseFb();
-	cam.captureToScreen(0, 0, 320, 240);
+
+	if (cam.getFb() == ESP_OK) {
+		M5.Display.startWrite();
+		M5.Display.setAddrWindow(0, 0, 320, 240);
+		M5.Display.writePixels((uint16_t*)cam.fb->buf, int(cam.fb->len / 2));
+		M5.Display.endWrite();
+		ditherImg((uint16_t*)cam.fb->buf, app_wifi_get_img_buffer(), 320, 240);
+		wifi_send_cmd(WIFI_CMD_SEND_FRAME);
+	}
+	else {
+		M5.Display.fillRect(0, 0, 320, 240, RED);
+	}
+	cam.releaseFb();
+	
+	// cam.captureToScreen(0, 0, 320, 240);
 	vTaskDelay(3000);
 	resumeAnimeTask();
 	return ESP_OK;
@@ -155,6 +173,75 @@ esp_err_t func_call_set_vol(String args)
 	return ESP_OK;
 }
 
+esp_err_t func_call_weather(String args)
+{
+	DynamicJsonDocument json(512);
+	deserializeJson(json, args);
+	String lon = "139.839";
+	String lat = "35.652"; // default tokyo
+	
+	if (json.containsKey("lon") && json.containsKey("lat")) {
+		// OpenWeatherAPI api;
+		// api.setToken("097a18e6638a79a1f036b135d4b4a4b4");
+		lon = json["lon"].as<String>();
+		lat = json["lat"].as<String>();
+	}
+
+	CaiyunAPI api;
+	api.setToken("OFP0WPweUhyhZ539");
+	api.setCoordinate(lon, lat);
+
+	if (chat_lang == Whisper::CHINESE) {
+		api.setLanguage(APIBase::LANGUAGE_CHINESE_SIMPLIFIED);
+	}
+	else if (chat_lang == Whisper::JAPANESE) {
+		api.setLanguage(APIBase::LANGUAGE_JAPANESE);
+	}
+	else {
+		api.setLanguage(APIBase::LANGUAGE_ENGLISH);
+	}
+	// api.setLanguage(APIBase::LANGUAGE_ENGLISH);
+	api.updateURL();
+	if (api.request() != ESP_OK) {
+		layer_log->setValue("Weather API error");
+		return ESP_FAIL;
+	}
+	int skycon = api.getRealtimeSkycon();
+	if (skycon == 0) {
+		layer_log->setValue("Weather API error");
+		return ESP_FAIL;
+	}
+	skycon -= 1;
+	ESP_LOGI(TAG, "Skycon: %d", skycon);
+
+	char buf[128];
+	sprintf(buf, "%s  %.0f/%.0f", api.getRealtimeSkyconDescription(APIBase::LANGUAGE_ENGLISH).c_str(), api.getTodayTemperatureMax(), api.getTodayTemperatureMin());
+	layer_weather_info->setValue(buf);
+
+	GoogleTTS tts("AIzaSyAON20OiLXb6qNQvNMR9L9dsqH-DgXmU8U");
+
+	tts.setSpeakerStartCallback([=](int rms) {
+		startTalk();
+		if (!layer_weathers[skycon]->moveStarted()) {
+			layer_weathers[skycon]->startMove();
+			layer_weather_info->startMove();
+		}
+	});
+	
+	if (tts.request(api.getKeypoint(), k_lang_name[chat_lang], k_lang_model[chat_lang], 1.0) != ESP_OK) {
+		wav_player.playFromSD(String("/network_error_") + k_lang_postfix[chat_lang]);
+		ESP_LOGE(TAG, "TTS API request failed.");
+		layer_log->setValue("TTS error");
+		return ESP_FAIL;
+	}
+	endTalk();
+	vTaskDelay(5000);
+	layer_weathers[skycon]->endMove();
+	layer_weather_info->endMove();
+
+	return ESP_OK;
+}
+
 esp_err_t invoke_function(int id, String args, int lang)
 {
 	chat_lang = (Whisper::language_t)lang;
@@ -172,6 +259,9 @@ esp_err_t invoke_function(int id, String args, int lang)
 
 	case APP_FUNC_CALL_ID_VOLUME:
 		return func_call_set_vol(args);
+
+	case APP_FUNC_CALL_ID_WEATHER:
+		return func_call_weather(args);
     
     default:
 		ESP_LOGE(TAG, "Invalid function call ID = %d", id);

@@ -21,7 +21,7 @@ void app_touch_task(void *args)
 			vTaskDelay(50);
 			continue;
 		}
-		if (data) {
+		if (data & 0x07 && !(data & 0xF8)) {
 			printf("Touch data %02X\n", data);
 			delay_count = 0;
         	// printf("%02X, ret = %d\n", data, ret);
@@ -55,6 +55,7 @@ void app_touch_task(void *args)
 					ESP_LOGE(TAG, "Failed to pause sr mic task");
 					continue;
 				}
+				motion_send_cmd(MOTION_CMD_NOD, 15);
 				M5.Mic.end();
 				M5.Speaker.begin();
     			M5.Speaker.setVolume(settings_get()->volume);
@@ -88,6 +89,6 @@ void app_touch_task(void *args)
 void app_touch_task_init()
 {
 	// led_semaphore = xSemaphoreCreateBinary();
-	xTaskCreatePinnedToCore(&app_touch_task, "TouchTask", 4 * 1024, NULL, 3, NULL, 1);
+	xTaskCreatePinnedToCore(&app_touch_task, "TouchTask", 4 * 1024, NULL, 10, NULL, 1);
 	// led.fillHSV(0, 99, 40);
 }
