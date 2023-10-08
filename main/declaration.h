@@ -16,3 +16,6 @@ extern servo servo_2;
 extern camera cam;
 extern LEDStrip led;
 extern LGFX_Sprite base_canvas;
+
+void wav_player_play_threaded(String path);
+bool wav_player_done(void);

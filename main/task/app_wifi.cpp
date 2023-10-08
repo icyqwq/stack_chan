@@ -4,13 +4,12 @@
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WiFiClient.h>
-#include <AsyncUDP.h>
+#include <WiFiUdp.h>
 #include "esp_wifi.h"
 
 #define TAG "WiFi"
 
-AsyncUDP udp;
-AsyncUDPMessage msg;
+WiFiUDP udp;
 static QueueHandle_t queue_wifi_cmd = NULL;
 static bool printer_connected = false;
 IPAddress printer_ip;
@@ -43,7 +42,7 @@ void _wifi_event(WiFiEvent_t event)
 
 	case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
 		ESP_LOGW(TAG, "Printer lost connection");
-		udp.close();
+		udp.stop();
 		printer_connected = false;
 		break;
 	default:
@@ -71,7 +70,8 @@ void app_wifi_task(void *args)
 		switch (ctrl.cmd)
 		{
 		case WIFI_CMD_SEND_FRAME: {
-			if(udp.connect(printer_ip, 1234)) {
+			
+			if(udp.begin(IPAddress(192, 168, 4, 1), 1234)) {
 				ESP_LOGI(TAG, "UDP Connected");
 			} else {
 				ESP_LOGW(TAG, "UDP Connect failed");
@@ -79,16 +79,16 @@ void app_wifi_task(void *args)
 			}
 			uint8_t retry = 0;
 			for (int i = 0; i < 8; i++) {
-				msg.flush();
-				msg.write(i);
-				msg.write(_img_buffer + i * 1200, 1200);
-				int len = udp.send(msg);
+				udp.beginPacket(printer_ip, 1234);
+				udp.write(i);
+				int len = udp.write(_img_buffer + i * 1200, 1200);
+				udp.endPacket();
 				// int len = udp.write(_img_buffer + i * 1200, 1200);
-				if (len != msg.length()) {
-					ESP_LOGE(TAG, "Data transfer error, len %d != %d, pack = %d", len, msg.length(), i);
+				if (len != 1200) {
+					ESP_LOGE(TAG, "Data transfer error, len %d != %d, pack = %d", len, 1200, i);
 					retry++;
 					if (retry > 3) {
-						udp.close();
+						udp.stop();
 						break;
 					} else {
 						i--;
@@ -98,7 +98,7 @@ void app_wifi_task(void *args)
 				}
 				vTaskDelay(50);
 			}
-			udp.close();
+			udp.stop();
 			break;
 		}
 		

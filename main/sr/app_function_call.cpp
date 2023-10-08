@@ -53,18 +53,24 @@ void sayOK()
 	endTalk();
 }
 
+
 esp_err_t func_call_snapshot()
 {
 	startTalk(false);
-	wav_player.playFromSD(String("/camera-") + k_lang_postfix[chat_lang]);
+	// wav_player.playFromSD(String("/camera-") + k_lang_postfix[chat_lang]);
 	endTalk();
 
 	if (suspendAnimeTask(2000) != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to suspend anime task");
 		return ESP_FAIL;
 	}
-	cam.getFb();
-	cam.releaseFb();
+	wav_player_play_threaded(String("/camera-") + k_lang_postfix[chat_lang]);
+
+	while (!wav_player_done())
+	{
+		cam.captureToScreen(0, 0, 320, 240);
+		vTaskDelay(10);
+	}
 
 	if (cam.getFb() == ESP_OK) {
 		M5.Display.startWrite();
