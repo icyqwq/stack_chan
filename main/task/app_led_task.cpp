@@ -71,7 +71,10 @@ void app_led_task(void *args)
 void app_led_task_init()
 {
 	// led_semaphore = xSemaphoreCreateBinary();
-	xTaskCreatePinnedToCore(&app_led_task, "LedTask", 3 * 1024, NULL, 1, NULL, 1);
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 4, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(app_led_task, "LedTask", 1024 * 4, NULL, 1,  task_stack, &task_tcb);
+	// xTaskCreatePinnedToCore(&app_led_task, "LedTask", 3 * 1024, NULL, 1, NULL, 1);
 	// led.fillHSV(0, 99, 40);
 }
 

@@ -119,7 +119,12 @@ void app_wifi_task_init()
 {
 	_img_buffer = (uint8_t*)heap_caps_malloc((320 * 240) / 8, MALLOC_CAP_SPIRAM);
 	queue_wifi_cmd = xQueueCreate(8, sizeof(app_common_cmd_t));
-	xTaskCreatePinnedToCore(&app_wifi_task, "WiFiTask", 8 * 1024, NULL, 8, NULL, 1);
+
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 8, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(app_wifi_task, "WiFiTask", 1024 * 8, NULL, 8,  task_stack, &task_tcb);
+
+	// xTaskCreatePinnedToCore(&app_wifi_task, "WiFiTask", 8 * 1024, NULL, 8, NULL, 1);
 }
 
 esp_err_t wifi_send_cmd(uint8_t cmd, int data)

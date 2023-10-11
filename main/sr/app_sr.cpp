@@ -126,7 +126,7 @@ static void audio_feed_task(void *arg) {
 
         float rms = calculate_rms(audio_buffer, audio_chunksize * I2S_CHANNEL_NUM, I2S_CHANNEL_NUM);
         app_led_task_feed(rms);
-        if (rms > 200000) {
+        if (rms > 300000) {
             action_send_cmd(ACTION_DIZZY);
         }
 
@@ -228,6 +228,10 @@ esp_err_t app_sr_start(bool record_en) {
                                 (void *)afe_data, 12, &g_sr_data->feed_task, 0);
     ESP_GOTO_ON_FALSE(pdPASS == ret_val, ESP_FAIL, err, TAG,
                       "Failed create audio feed task");
+
+    // static StaticTask_t task_tcb_sr_detect;
+    // static uint8_t * task_stack_sr_detect = (uint8_t*)heap_caps_malloc(1024 * 8, MALLOC_CAP_SPIRAM);
+	// g_sr_data->detect_task = xTaskCreateStatic(audio_detect_task, "Detect", 1024 * 8, (void *)afe_data, 12,  task_stack_sr_detect, &task_tcb_sr_detect);
 
     ret_val = xTaskCreatePinnedToCore(&audio_detect_task, "Detect Task",
                                       8 * 1024, (void *)afe_data, 12,

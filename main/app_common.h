@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include "SPIString.hpp"
+#include "StreamSPIString.hpp"
 
 #define WAVE_HEADER_SIZE    44
 #define BYTE_RATE           (16000 * (16 / 8))

@@ -99,7 +99,12 @@ void app_eye_task(void *args)
 void app_eye_task_init()
 {
 	queue_eye_cmd = xQueueCreate(8, sizeof(app_common_cmd_t));
-	xTaskCreatePinnedToCore(&app_eye_task, "EyeTask", 3 * 1024, NULL, 1, NULL, 1);
+
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 4, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(app_eye_task, "LedTask", 1024 * 4, NULL, 1,  task_stack, &task_tcb);
+	
+	// xTaskCreatePinnedToCore(&app_eye_task, "EyeTask", 3 * 1024, NULL, 1, NULL, 1);
 }
 
 

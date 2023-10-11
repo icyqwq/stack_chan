@@ -41,9 +41,9 @@ void setupWiFi()
     printf("STA IP Address: %s\n", WiFi.localIP().toString().c_str());
     printf("AP  IP Address: %s\n", WiFi.softAPIP().toString().c_str());
 
-    if (!MDNS.begin("m5stackchan")) {
-        ESP_LOGE(TAG, "Error setting up MDNS responder!\n");
-    }
+    // if (!MDNS.begin("m5stackchan")) {
+    //     ESP_LOGE(TAG, "Error setting up MDNS responder!\n");
+    // }
 }
 
 void weather_api_test(void *args)
@@ -93,7 +93,11 @@ extern "C" void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
+    MEMCHECK
+
     M5.begin();
+
+    MEMCHECK
 
     // setupWiFi();
     // SD.begin(GPIO_NUM_4, SPI, 25000000);
@@ -197,6 +201,8 @@ extern "C" void app_main(void)
     servo_1.backToDefault();
     servo_2.backToDefault();
     // servo_test();
+
+    MEMCHECK
     
     motion_init();
 
@@ -205,35 +211,41 @@ extern "C" void app_main(void)
     // base_canvas.setPsram(true);
     // base_canvas.createSprite(320, 240);
 
+    MEMCHECK
+
     led.begin();
+
+    MEMCHECK
     // lcd_test();
     cam.init(FRAMESIZE_QVGA);
 
-
+    MEMCHECK
     anime_init();
 
-    
+    MEMCHECK
     // app_face_tracker_init();
     
 
     settings_read_from_nvs();
     ESP_LOGI(TAG, "settings_get()->volume: %d", settings_get()->volume);
-    settings_get()->volume = 50;
+    // settings_get()->volume = 50;
 
     layer_log->setValue("Connecting to " + String(ssid));
     setupWiFi();
-
+    MEMCHECK
     app_touch_task_init();
     app_led_task_init();
     app_eye_task_init();
     app_action_task_init();
     app_wifi_task_init();
+    MEMCHECK
     
     layer_log->setValue("Starting SR");
     M5.Speaker.end();
     M5.Mic.begin();
     M5.Mic.end();
     app_sr_start(false);
+    MEMCHECK
 
     layer_log->clean();
 

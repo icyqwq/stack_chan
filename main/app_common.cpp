@@ -270,19 +270,19 @@ inline void _applyDitheredVal(uint16_t grayscale, uint8_t *line0, uint8_t *line1
 {
     *line0 <<= 2;
     *line1 <<= 2;
-    if (grayscale < 51) {
+    if (grayscale < 84) {
         *line0 |= 0b11;
         *line1 |= 0b11;
     }
-    else if (grayscale < 102) {
+    else if (grayscale < 126) {
         *line0 |= 0b10;
         *line1 |= 0b11;
     }
-    else if (grayscale < 153) {
+    else if (grayscale < 168) {
         *line0 |= 0b10;
         *line1 |= 0b01;
     }
-    else if (grayscale < 204) {
+    else if (grayscale < 210) {
         *line0 |= 0b10;
         *line1 |= 0b00;
     }

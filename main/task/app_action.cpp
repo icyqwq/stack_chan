@@ -60,7 +60,12 @@ void app_action_task(void *args)
 void app_action_task_init()
 {
 	queue_action_cmd = xQueueCreate(8, sizeof(app_common_cmd_t));
-	xTaskCreatePinnedToCore(&app_action_task, "ActionTask", 4 * 1024, NULL, 10, NULL, 1);
+
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 4, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(app_action_task, "ActionTask", 1024 * 4, NULL, 10,  task_stack, &task_tcb);
+
+	// xTaskCreatePinnedToCore(&app_action_task, "ActionTask", 4 * 1024, NULL, 10, NULL, 1);
 }
 
 esp_err_t action_send_cmd(uint8_t cmd, int data)

@@ -43,7 +43,7 @@ public:
             fpng_decode_memory(_p_png, _png_size, _w, _h);
             convert_rgb888_to_rgb565(fpng_get_buffer(), _w * _h * 3, false);
             sprite.setSwapBytes(true);
-            sprite.pushImage(_cur_x, _cur_y, _w, _h, (uint16_t*)fpng_get_buffer());
+            sprite.pushImage(_cur_x, _cur_y, _w, _h, (uint16_t*)fpng_get_buffer(), (uint16_t)0x1FF8);
         }
     }
 

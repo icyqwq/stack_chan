@@ -92,14 +92,15 @@ public:
 			return ESP_FAIL;
 		}
 
-		String response = getString();
+		StreamSPIString response;
+		writeToStream(&response);
 		ESP_LOGI(TAG, "Resp Payload: %s", response.c_str());
 
 		if (response.indexOf("error") >= 0) {
 			return ESP_FAIL;
 		}
 
-		deserializeJson(_resp_json_doc, response);
+		deserializeJson(_resp_json_doc, response.c_str());
 		last_result = _resp_json_doc["text"].as<String>();
 		ESP_LOGI(TAG, "ChatGPT Resp: %s", last_result.c_str());
 

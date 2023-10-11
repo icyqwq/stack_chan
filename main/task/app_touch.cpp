@@ -88,7 +88,10 @@ void app_touch_task(void *args)
 
 void app_touch_task_init()
 {
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 4, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(app_touch_task, "TouchTask", 1024 * 4, NULL, 10,  task_stack, &task_tcb);
 	// led_semaphore = xSemaphoreCreateBinary();
-	xTaskCreatePinnedToCore(&app_touch_task, "TouchTask", 4 * 1024, NULL, 10, NULL, 1);
+	// xTaskCreatePinnedToCore(&app_touch_task, "TouchTask", 4 * 1024, NULL, 10, NULL, 1);
 	// led.fillHSV(0, 99, 40);
 }

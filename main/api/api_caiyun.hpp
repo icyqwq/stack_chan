@@ -173,7 +173,9 @@ public:
             if (httpCode == 200)
             {
                 doc->clear();
-                DeserializationError err = deserializeJson(*doc, http.getString());
+                StreamSPIString response;
+                http.writeToStream(&response);
+                DeserializationError err = deserializeJson(*doc, response.c_str());
                 if (err)
                 {
                     _err_str = String("JSON Parse Faild, ") + err.c_str();

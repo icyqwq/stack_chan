@@ -65,11 +65,11 @@ static int16_t * p_audio_buf = NULL;
 extern int16_t *audio_buffer;
 extern int audio_buffer_size;
 static Whisper::language_t chat_lang = Whisper::ENGLISH;
-ChatGPT gpt("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");
+ChatGPT gpt("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");
 
 esp_err_t request_stt(String &result)
 {
-    Whisper stt("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");
+    Whisper stt("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");
 
     chat_lang = stt.getLastLanguage();
     generate_wav_header((char*)wav_file_buffer, wav_size, 16000, 1);
@@ -296,22 +296,14 @@ void sr_handler_task(void *pvParam) {
     while (true) {
         sr_result_t result;
         app_sr_get_result(&result, portMAX_DELAY);
-        char audio_file[48] = {0};
 
-        if (ESP_MN_STATE_TIMEOUT == result.state) {
-            printf("Timeout\r\n");
-            continue;
-        }
-
-        if (WAKENET_DETECTED == result.wakenet_mode) {
-            printf("Detected\r\n");
-            motion_send_cmd(MOTION_CMD_NOD, 2);
-            app_led_set_mode(LED_MODE_ROTATE);
-            record_segment();
-
-            app_sr_give_mic_sem();
-            continue;
-        }
+        printf("Detected\r\n");
+        motion_send_cmd(MOTION_CMD_NOD, 2);
+        app_led_set_mode(LED_MODE_ROTATE);
+        record_segment();
+        PROB
+        app_sr_give_mic_sem();
+        PROB
     }
     vTaskDelete(NULL);
 }

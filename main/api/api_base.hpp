@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <utility>
 #include <cstring> 
+#include "StreamSPIString.hpp"
 
 struct SPIRAMAllocator {
   void* allocate(size_t size) {

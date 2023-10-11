@@ -268,9 +268,17 @@ void Anime_SystemInit(uint8_t core_id)
 
     operation_semaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(operation_semaphore);
+
+    // static StaticTask_t task_tcb;
+    // static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 8, MALLOC_CAP_SPIRAM);
+	// xTaskCreateStatic(Anime_Task, "Anime_Task", 1024 * 8, NULL, 2,  task_stack, &task_tcb);
+
+    static StaticTask_t task_tcb2;
+    static uint8_t * task_stack2 = (uint8_t*)heap_caps_malloc(1024 * 4, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(Anime_ControlTask, "Anime_ControlTask", 1024 * 4, NULL, 3,  task_stack2, &task_tcb2);
     
     xTaskCreatePinnedToCore(&Anime_Task, "Anime_Task", 8 * 1024, NULL, 1, &anime_task_handle, core_id);
-    xTaskCreatePinnedToCore(&Anime_ControlTask, "Anime_ControlTask", 4 * 1024, NULL, 2, &anime_ctrl_task_handle, core_id);
+    // xTaskCreatePinnedToCore(&Anime_ControlTask, "Anime_ControlTask", 4 * 1024, NULL, 2, &anime_ctrl_task_handle, core_id);
 }
 
 esp_err_t Anime_SendCmd(anime_play_cmd_t *ctrl)

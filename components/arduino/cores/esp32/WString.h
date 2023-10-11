@@ -342,7 +342,7 @@ class String {
     protected:
         void init(void);
         void invalidate(void);
-        bool changeBuffer(unsigned int maxStrLen);
+        virtual bool changeBuffer(unsigned int maxStrLen);
 
         // copy and move
         String & copy(const char *cstr, unsigned int length);

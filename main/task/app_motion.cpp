@@ -128,8 +128,12 @@ void motion_task(void *args)
 void motion_init()
 {
 	queue_motion_cmd = xQueueCreate(8, sizeof(app_common_cmd_t));
-	xTaskCreatePinnedToCore(&motion_task, "Motion", 8 * 1024, NULL, 15, NULL, 1);
+	
+	static StaticTask_t task_tcb;
+    static uint8_t * task_stack = (uint8_t*)heap_caps_malloc(1024 * 8, MALLOC_CAP_SPIRAM);
+	xTaskCreateStatic(motion_task, "Motion", 1024 * 8, NULL, 14,  task_stack, &task_tcb);
 
+	// xTaskCreatePinnedToCore(&motion_task, "Motion", 8 * 1024, NULL, 15, NULL, 1);
 }
 
 esp_err_t motion_send_cmd(uint8_t cmd, int data)
